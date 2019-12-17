@@ -17,10 +17,10 @@ public class GeoClass {
     @Column(nullable = true)
     private String code;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
 //    @JoinColumn(name = "section_id", referencedColumnName = "section_id")
-//    @JsonIgnore
-//    public Section sections;
+    @JsonIgnore
+    public Section sections;
 
     public GeoClass() {
 
@@ -50,11 +50,11 @@ public class GeoClass {
         this.code = code;
     }
 
-//    public Section getSections() {
-//        return sections;
-//    }
-//
-//    public void setSections(Section sections) {
-//        this.sections = sections;
-//    }
+    public Section getSections() {
+        return sections;
+    }
+
+    public void setSections(Section sections) {
+        this.sections = sections;
+    }
 }

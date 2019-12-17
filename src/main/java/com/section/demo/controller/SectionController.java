@@ -2,6 +2,7 @@ package com.section.demo.controller;
 
 import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
+import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.xml.ws.Response;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,9 @@ public class SectionController {
 
     @Autowired
     private SectionRepository sectionRepository;
+
+    @Autowired
+    private GeoClassRepository geoClassRepository;
 
     @Autowired
     private SectionService sectionService;
@@ -31,6 +36,8 @@ public class SectionController {
     @PostMapping("/sections/")
     public ResponseEntity<Section> createSection(@Valid @RequestBody Section section) {
         section = sectionService.save(section);
+        @Valid Section finalSection = section;
+        section.getGeoClasses().forEach(geoClass -> geoClass.setSections(finalSection));
         return ResponseEntity.ok(section);
     }
 
@@ -45,5 +52,20 @@ public class SectionController {
         }
         response.put("deleted", Boolean.FALSE);
         return response;
+    }
+
+    @GetMapping("/sections/by-code")
+    public List<Map<String, Object>> getAllListsByGeoClassCode(@RequestParam String code) {
+        List<GeoClass> geoClasses = geoClassRepository.findAllByCode(code);
+
+        List<Map<String, Object>> sections = new ArrayList<>();
+        for (GeoClass geoClass: geoClasses) {
+            Map<String, Object> response = new HashMap<>();
+            Section section = sectionRepository.findByGeoClasses(geoClass);
+            response.put("id", section.getId());
+            response.put("name", section.getName());
+            sections.add(response);
+        }
+        return sections;
     }
 }

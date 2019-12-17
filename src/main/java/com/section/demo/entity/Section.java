@@ -20,7 +20,7 @@ public class Section {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "section_id")
     public List<GeoClass> geoClasses;
 
@@ -28,10 +28,8 @@ public class Section {
 
     }
 
-    public Section(String name, GeoClass... geoClasses) {
+    public Section(String name) {
         this.name = name;
-//        this.geoClasses = Arrays.asList(geoClasses);
-//        this.geoClasses.forEach(geoClass -> geoClass.setSection(this));
     }
 
     public long getId() {
