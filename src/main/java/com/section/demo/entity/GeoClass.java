@@ -16,7 +16,7 @@ public class GeoClass {
     @Column(nullable = true)
     private String code;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     @JsonBackReference
     private Section sections;

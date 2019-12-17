@@ -2,6 +2,7 @@ package com.section.demo.controller;
 
 import com.section.demo.entity.Section;
 import com.section.demo.repository.SectionRepository;
+import com.section.demo.service.SectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,9 @@ public class SectionController {
 
     @Autowired
     private SectionRepository sectionRepository;
+
+    @Autowired
+    private SectionService sectionService;
 
     @GetMapping("/sections/")
     public List<Section> getAllSections() {

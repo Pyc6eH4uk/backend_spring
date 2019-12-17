@@ -1,8 +1,12 @@
 package com.section.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -15,16 +19,17 @@ public class Section {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "sections", fetch = FetchType.LAZY, cascade=CascadeType.REMOVE)
-    @JsonManagedReference
-    private Set<GeoClass> geoClasses;
+    @OneToMany(mappedBy = "sections", cascade=CascadeType.PERSIST)
+    private List<GeoClass> geoClasses;
 
     public Section(){
 
     }
 
-    public Section(String name) {
+    public Section(String name, GeoClass... geoClasses) {
         this.name = name;
+//        this.geoClasses = Arrays.asList(geoClasses);
+//        this.geoClasses.forEach(geoClass -> geoClass.setSection(this));
     }
 
     public long getId() {
@@ -43,11 +48,11 @@ public class Section {
         this.name = name;
     }
 
-    public Set<GeoClass> getGeoClasses() {
+    public List<GeoClass> getGeoClasses() {
         return geoClasses;
     }
 
-    public void setGeoClasses(Set<GeoClass> geoClasses) {
+    public void setGeoClasses(List<GeoClass> geoClasses) {
         this.geoClasses = geoClasses;
     }
 
@@ -59,7 +64,7 @@ public class Section {
         if (geoClasses != null) {
             for(GeoClass book : geoClasses) {
                 result += String.format(
-                        "Book[id=%d, title='%s']%n",
+                        "GEOCLASS[id=%d, title='%s']%n",
                         book.getId(), book.getName());
             }
         }

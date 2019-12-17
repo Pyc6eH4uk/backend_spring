@@ -15,7 +15,7 @@ public class SectionService {
         this.sectionRepository = sectionRepository;
     }
 
-    public void createSection(Section section) {
-        sectionRepository.save(section);
+    public Section save(Section section) {
+        return sectionRepository.save(section);
     }
 }
