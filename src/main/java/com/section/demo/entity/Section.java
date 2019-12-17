@@ -14,13 +14,15 @@ import java.util.Set;
 public class Section {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "section_id")
     private long id;
 
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "sections", cascade=CascadeType.PERSIST)
-    private List<GeoClass> geoClasses;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "section_id")
+    public List<GeoClass> geoClasses;
 
     public Section(){
 

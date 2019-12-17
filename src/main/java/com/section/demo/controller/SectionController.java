@@ -1,5 +1,6 @@
 package com.section.demo.controller;
 
+import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
 import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
@@ -29,8 +30,7 @@ public class SectionController {
 
     @PostMapping("/sections/")
     public ResponseEntity<Section> createSection(@Valid @RequestBody Section section) {
-        section = sectionRepository.save(section);
-        section.setGeoClasses(section.getGeoClasses());
+        section = sectionService.save(section);
         return ResponseEntity.ok(section);
     }
 

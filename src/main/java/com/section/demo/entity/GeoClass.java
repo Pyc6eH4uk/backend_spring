@@ -1,6 +1,7 @@
 package com.section.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 
@@ -16,10 +17,10 @@ public class GeoClass {
     @Column(nullable = true)
     private String code;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "section_id")
-    @JsonBackReference
-    private Section sections;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "section_id", referencedColumnName = "section_id")
+//    @JsonIgnore
+//    public Section sections;
 
     public GeoClass() {
 
@@ -49,11 +50,11 @@ public class GeoClass {
         this.code = code;
     }
 
-    public Section getSections() {
-        return sections;
-    }
-
-    public void setSections(Section sections) {
-        this.sections = sections;
-    }
+//    public Section getSections() {
+//        return sections;
+//    }
+//
+//    public void setSections(Section sections) {
+//        this.sections = sections;
+//    }
 }
