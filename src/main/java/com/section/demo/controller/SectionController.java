@@ -5,12 +5,16 @@ import com.section.demo.entity.Section;
 import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import javax.xml.ws.Response;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,5 +71,40 @@ public class SectionController {
             sections.add(response);
         }
         return sections;
+    }
+
+    @PostMapping("import")
+    public String uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
+        XSSFSheet worksheet = workbook.getSheetAt(0);
+
+        for (int i = 1; i < worksheet.getPhysicalNumberOfRows(); i++) {
+            XSSFRow row = worksheet.getRow(i);
+
+            Section section = new Section();
+            section.setName(row.getCell(0).toString());
+
+            List<GeoClass> geoClasses = new ArrayList<>();
+
+            for (int j = 1; j < row.getLastCellNum() - 1; j++) {
+                GeoClass geoClass = new GeoClass();
+                String name = row.getCell(j).toString();
+                if (name == null) {
+                    continue;
+                }
+                geoClass.setName(name);
+
+                String code = row.getCell(j + 1).toString();
+                if (code != null) {
+                    geoClass.setCode(code);
+                }
+                geoClasses.add(geoClass);
+            }
+            section.setGeoClasses(geoClasses);
+            sectionRepository.save(section);
+            System.out.println("read");
+        }
+
+        return "Ok";
     }
 }
