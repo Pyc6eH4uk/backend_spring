@@ -7,6 +7,10 @@ import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
 import com.section.demo.service.XlsxFileUpload;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -18,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,7 +105,7 @@ public class SectionController {
         return sections;
     }
 
-    @PostMapping("import")
+    @PostMapping("/import/")
     public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
         Task task = new Task();
         xlsxFileUpload.uploadXlsFile(file, task);
@@ -107,7 +113,7 @@ public class SectionController {
         return task.getTaskId();
     }
 
-    @GetMapping("import/{taskId}")
+    @GetMapping("/import/{taskId}")
     public ResponseEntity<Map<String, String>> statusOfImportFile(@PathVariable(name = "taskId") int taskId) {
         Map<String, String> result = new HashMap<>();
         Task task = tasks.get(taskId);
@@ -117,5 +123,53 @@ public class SectionController {
         }
         result.put("status", String.valueOf(task.getStatus()));
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/export/")
+    public String exportFile() throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        List<Section> sections = sectionRepository.findAll();
+        int columnsCount = geoClassRepository.countAllRows();
+
+        Sheet sheet = workbook.createSheet("result");
+
+        Row headerRow = sheet.createRow(0);
+        Cell section_cell = headerRow.createCell(0);
+        section_cell.setCellValue("Sections");
+
+        for (int i = 1; i < columnsCount - 1; i += 2) {
+            Cell class_cell = headerRow.createCell(i);
+            class_cell.setCellValue("CLASS" + " " + i);
+            Cell code_cell = headerRow.createCell(i);
+            code_cell.setCellValue("CODE" + " " + i);
+        }
+
+        int rowNumber = 1;
+
+        for (Section section : sections) {
+            int cell = 0;
+            Row row = sheet.createRow(rowNumber++);
+
+            row.createCell(cell).setCellValue(section.getName());
+
+            List<GeoClass> geoClasses = section.getGeoClasses();
+            if (geoClasses == null) {
+                continue;
+            }
+            cell++;
+            for (GeoClass geoClass : geoClasses) {
+                row.createCell(cell).setCellValue(geoClass.getName());
+                cell++;
+
+                row.createCell(cell).setCellValue(geoClass.getName());
+                cell++;
+            }
+            FileOutputStream fileOutputStream = new FileOutputStream("result.xlsx");
+            workbook.write(fileOutputStream);
+            fileOutputStream.close();
+
+            workbook.close();
+        }
+        return "OK";
     }
 }

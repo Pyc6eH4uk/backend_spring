@@ -18,7 +18,7 @@ public class Task {
     public static final String PROCESSING = "PROCESSING";
     public static final String DONE = "DONE";
 
-    public static AtomicInteger id = new AtomicInteger(0);
+    public static AtomicInteger id = new AtomicInteger(1);
     private int taskId;
     private String status = Task.PROCESSING;
 
