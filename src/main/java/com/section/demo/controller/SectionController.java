@@ -2,14 +2,17 @@ package com.section.demo.controller;
 
 import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
+import com.section.demo.job.Task;
 import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
+import com.section.demo.service.XlsxFileUpload;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 @RestController
 public class SectionController {
@@ -31,6 +37,9 @@ public class SectionController {
 
     @Autowired
     private SectionService sectionService;
+
+    @Autowired
+    private XlsxFileUpload xlsxFileUpload;
 
     @GetMapping("/sections/")
     public List<Section> getAllSections() {
@@ -74,37 +83,16 @@ public class SectionController {
     }
 
     @PostMapping("import")
-    public String uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException {
-        XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
-        XSSFSheet worksheet = workbook.getSheetAt(0);
+    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
+        xlsxFileUpload.uploadXlsFile(file);
+        return 1;
+    }
 
-        for (int i = 1; i < worksheet.getPhysicalNumberOfRows(); i++) {
-            XSSFRow row = worksheet.getRow(i);
-
-            Section section = new Section();
-            section.setName(row.getCell(0).toString());
-
-            List<GeoClass> geoClasses = new ArrayList<>();
-
-            for (int j = 1; j < row.getLastCellNum() - 1; j++) {
-                GeoClass geoClass = new GeoClass();
-                String name = row.getCell(j).toString();
-                if (name == null) {
-                    continue;
-                }
-                geoClass.setName(name);
-
-                String code = row.getCell(j + 1).toString();
-                if (code != null) {
-                    geoClass.setCode(code);
-                }
-                geoClasses.add(geoClass);
-            }
-            section.setGeoClasses(geoClasses);
-            sectionRepository.save(section);
-            System.out.println("read");
-        }
-
-        return "Ok";
+    @GetMapping("import/{taskId}")
+    public Map<String, String> statusOfImportFile(@PathVariable(name = "taskId") String taskId) {
+        Map<String, String> result = new HashMap<>();
+        Task task;
+        result.put("status", "DONE");
+        return result;
     }
 }
