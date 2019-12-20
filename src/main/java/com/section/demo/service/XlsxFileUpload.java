@@ -32,39 +32,42 @@ public class XlsxFileUpload {
     }
 
     @Async
-    public void uploadXlsFile(MultipartFile file) throws IOException, InterruptedException {
-        XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
-        XSSFSheet worksheet = workbook.getSheetAt(0);
-        List<Section> sections = new ArrayList<>();
-        for (int i = 1; i < worksheet.getPhysicalNumberOfRows(); i++) {
-            XSSFRow row = worksheet.getRow(i);
+    public void uploadXlsFile(MultipartFile file, Task task) throws IOException, InterruptedException {
+        try {
+            XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
+            XSSFSheet worksheet = workbook.getSheetAt(0);
+            List<Section> sections = new ArrayList<>();
+            for (int i = 1; i < worksheet.getPhysicalNumberOfRows(); i++) {
+                XSSFRow row = worksheet.getRow(i);
 
-            Section section = new Section();
-            section.setName(row.getCell(0).toString());
+                Section section = new Section();
+                section.setName(row.getCell(0).toString());
 
-            List<GeoClass> geoClasses = new ArrayList<>();
+                List<GeoClass> geoClasses = new ArrayList<>();
 
-            for (int j = 1; j < row.getLastCellNum() - 1; j++) {
-                GeoClass geoClass = new GeoClass();
-                String name = row.getCell(j).toString();
-                if (name == null) {
-                    continue;
+                for (int j = 1; j < row.getLastCellNum() - 1; j++) {
+                    GeoClass geoClass = new GeoClass();
+                    String name = row.getCell(j).toString();
+                    if (name == null) {
+                        continue;
+                    }
+                    geoClass.setName(name);
+
+                    String code = row.getCell(j + 1).toString();
+                    if (code != null) {
+                        geoClass.setCode(code);
+                    }
+                    geoClasses.add(geoClass);
                 }
-                geoClass.setName(name);
-
-                String code = row.getCell(j + 1).toString();
-                if (code != null) {
-                    geoClass.setCode(code);
-                }
-                geoClasses.add(geoClass);
+                section.setGeoClasses(geoClasses);
+                sections.add(sectionRepository.save(section));
             }
-            section.setGeoClasses(geoClasses);
-            sections.add(sectionRepository.save(section));
+        } catch (Exception exception) {
+            System.out.println("EXCEPTION");
+            task.setStatus(Task.FAILURE);
+            return;
         }
-        CompletableFuture<List<Section>> future = new CompletableFuture<>();
-        future.thenApplyAsync(sections1 -> sections1);
-        System.out.println("Before timeout" + future.isDone());
         Thread.sleep(5000L);
-        System.out.println("After Timeout" + future.isDone());
+        task.setStatus(Task.DONE);
     }
 }

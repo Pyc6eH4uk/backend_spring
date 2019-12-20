@@ -11,6 +11,7 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,12 @@ public class SectionController {
 
     @Autowired
     private XlsxFileUpload xlsxFileUpload;
+
+    private Map<Integer, Task> tasks;
+
+    public SectionController() {
+        this.tasks = new HashMap<>();
+    }
 
     @GetMapping("/sections/")
     public List<Section> getAllSections() {
@@ -72,7 +79,7 @@ public class SectionController {
         List<GeoClass> geoClasses = geoClassRepository.findAllByCode(code);
 
         List<Map<String, Object>> sections = new ArrayList<>();
-        for (GeoClass geoClass: geoClasses) {
+        for (GeoClass geoClass : geoClasses) {
             Map<String, Object> response = new HashMap<>();
             Section section = sectionRepository.findByGeoClasses(geoClass);
             response.put("id", section.getId());
@@ -84,15 +91,21 @@ public class SectionController {
 
     @PostMapping("import")
     public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
-        xlsxFileUpload.uploadXlsFile(file);
-        return 1;
+        Task task = new Task();
+        xlsxFileUpload.uploadXlsFile(file, task);
+        tasks.put(task.getTaskId(), task);
+        return task.getTaskId();
     }
 
     @GetMapping("import/{taskId}")
-    public Map<String, String> statusOfImportFile(@PathVariable(name = "taskId") String taskId) {
+    public ResponseEntity<Map<String, String>> statusOfImportFile(@PathVariable(name = "taskId") int taskId) {
         Map<String, String> result = new HashMap<>();
-        Task task;
-        result.put("status", "DONE");
-        return result;
+        Task task = tasks.get(taskId);
+        if (task == null) {
+            result.put("status", "Not existing task");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+        }
+        result.put("status", String.valueOf(task.getStatus()));
+        return ResponseEntity.ok(result);
     }
 }

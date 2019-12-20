@@ -1,33 +1,40 @@
 package com.section.demo.job;
 
 import com.section.demo.entity.Section;
+import com.section.demo.service.XlsxFileUpload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class Task {
-    public static int taskId;
-    private CompletableFuture<List<Section>> processingSections;
+    public static final int FAILURE = 0;
+    public static final int PROCESSING = 1;
+    public static final int DONE = 2;
 
-    public Task(CompletableFuture<List<Section>> processingSections) {
-        this.processingSections = processingSections;
-        ++taskId;
+    public static AtomicInteger id = new AtomicInteger(0);
+    private int taskId;
+    private AtomicInteger status = new AtomicInteger(Task.PROCESSING);
+
+    public Task() {
+        this.taskId = id.getAndAdd(1);
     }
 
-    public Integer getTaskId() {
+    public int getTaskId() {
         return taskId;
     }
 
-    public Map<String, String> statusOfProcessingSections() {
-        Map<String, String> result = new HashMap<>();
-        if (processingSections.isDone()) {
-            result.put("status", "DONE");
-        } else {
-            result.put("status", "PROGRESS");
-        }
-        return result;
+    public int getStatus() {
+        return status.get();
+    }
+
+    public void setStatus(int status) {
+        this.status.set(status);
     }
 }
