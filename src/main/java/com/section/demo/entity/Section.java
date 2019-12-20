@@ -17,7 +17,7 @@ public class Section {
     @Column(name = "section_id")
     private long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @OneToMany(cascade = CascadeType.PERSIST)

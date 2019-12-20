@@ -54,11 +54,21 @@ public class SectionController {
     }
 
     @PostMapping("/sections/")
-    public ResponseEntity<Section> createSection(@Valid @RequestBody Section section) {
-        section = sectionService.save(section);
+    public ResponseEntity<Map<String, String>> createSection(@Valid @RequestBody Section section) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            section = sectionService.save(section);
+        } catch (Exception exception) {
+            response.put("message", "Section with such name already exists.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         @Valid Section finalSection = section;
-        section.getGeoClasses().forEach(geoClass -> geoClass.setSections(finalSection));
-        return ResponseEntity.ok(section);
+        List<GeoClass> geoClasses = section.getGeoClasses();
+        if (geoClasses != null) {
+            geoClasses.forEach(geoClass -> geoClass.setSections(finalSection));
+        }
+        response.put("message", "Successfully created section.");
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/sections/{sectionId}")

@@ -14,13 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class Task {
-    public static final int FAILURE = 0;
-    public static final int PROCESSING = 1;
-    public static final int DONE = 2;
+    public static final String FAILURE = "ERROR";
+    public static final String PROCESSING = "PROCESSING";
+    public static final String DONE = "DONE";
 
     public static AtomicInteger id = new AtomicInteger(0);
     private int taskId;
-    private AtomicInteger status = new AtomicInteger(Task.PROCESSING);
+    private String status = Task.PROCESSING;
 
     public Task() {
         this.taskId = id.getAndAdd(1);
@@ -30,11 +30,11 @@ public class Task {
         return taskId;
     }
 
-    public int getStatus() {
-        return status.get();
+    public String getStatus() {
+        return status;
     }
 
-    public void setStatus(int status) {
-        this.status.set(status);
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

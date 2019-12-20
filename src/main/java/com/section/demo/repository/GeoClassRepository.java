@@ -8,4 +8,5 @@ import java.util.List;
 public interface GeoClassRepository extends JpaRepository<GeoClass, Long> {
 
     List<GeoClass> findAllByCode(String code);
+
 }

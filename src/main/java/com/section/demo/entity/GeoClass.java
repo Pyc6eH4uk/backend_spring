@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 
 @Entity
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"code", "section_id"})})
 public class GeoClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +19,6 @@ public class GeoClass {
     private String code;
 
     @ManyToOne
-//    @JoinColumn(name = "section_id", referencedColumnName = "section_id")
     @JsonIgnore
     public Section sections;
 
