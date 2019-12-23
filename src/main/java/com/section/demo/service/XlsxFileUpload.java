@@ -2,7 +2,7 @@ package com.section.demo.service;
 
 import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
-import com.section.demo.job.Task;
+import com.section.demo.job.Import;
 import com.section.demo.repository.SectionRepository;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -10,15 +10,12 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 @Service
 public class XlsxFileUpload {
@@ -32,7 +29,7 @@ public class XlsxFileUpload {
     }
 
     @Async
-    public void uploadXlsFile(MultipartFile file, Task task) throws IOException, InterruptedException {
+    public void uploadXlsFile(MultipartFile file, Import task) throws IOException, InterruptedException {
         try {
             XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
             XSSFSheet worksheet = workbook.getSheetAt(0);
@@ -64,10 +61,10 @@ public class XlsxFileUpload {
             }
         } catch (Exception exception) {
             System.out.println("EXCEPTION");
-            task.setStatus(Task.FAILURE);
+            task.setStatus(Import.FAILURE);
             return;
         }
         Thread.sleep(5000L);
-        task.setStatus(Task.DONE);
+        task.setStatus(Import.DONE);
     }
 }
