@@ -20,7 +20,7 @@ public class Section {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @OneToMany(cascade = CascadeType.PERSIST)
+    @OneToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     @JoinColumn(name = "section_id")
     public List<GeoClass> geoClasses;
 
@@ -58,18 +58,9 @@ public class Section {
 
     @Override
     public String toString() {
-        String result = String.format(
-                "Category[id=%d, name='%s']%n",
+        return String.format(
+                "Section[id=%d, name='%s']%n",
                 id, name);
-        if (geoClasses != null) {
-            for(GeoClass book : geoClasses) {
-                result += String.format(
-                        "GEOCLASS[id=%d, title='%s']%n",
-                        book.getId(), book.getName());
-            }
-        }
-
-        return result;
     }
 }
 

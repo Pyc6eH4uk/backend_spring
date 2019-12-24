@@ -9,7 +9,14 @@ import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.SectionService;
 import com.section.demo.service.XlsxFileExport;
 import com.section.demo.service.XlsxFileUpload;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +33,9 @@ import java.util.concurrent.Future;
 
 @RestController
 public class SectionController {
+
+    public static final String FILENAME = "result";
+    public static final String EXTENSION = ".xls";
 
     @Autowired
     private SectionRepository sectionRepository;
@@ -103,7 +113,7 @@ public class SectionController {
     }
 
     @PostMapping("/import/")
-    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
+    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
         Import task = new Import();
         xlsxFileUpload.uploadXlsFile(file, task);
         importTasks.put(task.getTaskId(), task);
@@ -128,7 +138,7 @@ public class SectionController {
         Export exportTask = new Export();
         int columnsCount = geoClassRepository.countAllRows();
         List<Section> sections = sectionRepository.findAll();
-        Future<byte[]> future = xlsxFileExport.exportDBDataToXlsxFile(sections, columnsCount, exportTask);
+        Future<byte[]> future = xlsxFileExport.exportDBDataToXlsxFile(sections, columnsCount);
         int taskId = exportTask.getTaskId();
         exportTasks.put(taskId, future);
         result.put("taskId", String.valueOf(taskId));
@@ -146,10 +156,42 @@ public class SectionController {
         }
 
         if (future.isDone()) {
-            result.put("status", Export.DONE);
+            try {
+                future.get();
+                result.put("status", Export.DONE);
+            } catch (InterruptedException | ExecutionException exception) {
+                result.put("status", Export.FAILURE);
+            }
+        } else {
+            result.put("status", Export.PROCESSING);
         }
-//        result.put("status", /);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/export/{exportId}/file")
+    public ResponseEntity exportFile(@PathVariable(name = "exportId") int taskId) {
+        Future<byte[]> future = exportTasks.get(taskId);
+        Map<String, String> result = new HashMap<>();
+
+        if (future == null) {
+            result.put("status", "Not existing task");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+        }
+
+        byte[] out = new byte[0];
+
+        if (future.isDone()) {
+            try {
+                out = future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                result.put("status", Export.PROCESSING);
+                return ResponseEntity.ok(result);
+            }
+        }
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + SectionController.FILENAME + taskId + SectionController.EXTENSION)
+                .body(out);
     }
 
 }
