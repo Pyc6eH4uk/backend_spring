@@ -6,9 +6,8 @@ import com.section.demo.job.Export;
 import com.section.demo.job.Import;
 import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
-import com.section.demo.service.XlsxFileExport;
-import com.section.demo.service.XlsxFileUpload;
-import org.apache.poi.util.ArrayUtil;
+import com.section.demo.service.XlsFileExport;
+import com.section.demo.service.XlsFileUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,10 +34,10 @@ public class SectionController {
     private GeoClassRepository geoClassRepository;
 
     @Autowired
-    private XlsxFileUpload xlsxFileUpload;
+    private XlsFileUpload xlsFileUpload;
 
     @Autowired
-    private XlsxFileExport xlsxFileExport;
+    private XlsFileExport xlsFileExport;
 
     private Map<Integer, Import> importTasks;
     private Map<Integer, Future<byte[]>> exportTasks;
@@ -63,11 +62,6 @@ public class SectionController {
             response.put("message", "section with such name already exists.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-        @Valid Section finalSection = section;
-        List<GeoClass> geoClasses = section.getGeoClasses();
-        if (geoClasses != null) {
-            geoClasses.forEach(geoClass -> geoClass.setSections(finalSection));
-        }
         response.put("message", "Successfully created section.");
         return ResponseEntity.ok(response);
     }
@@ -82,15 +76,13 @@ public class SectionController {
         }
 
         section.setId(sectionId);
-//        List<GeoClass> geoClassesOptional = sectionOptional.get().getGeoClasses();
-//        List<GeoClass> geoClasses = section.getGeoClasses();
-//        if (geoClasses != null) {
-//            for (GeoClass geoClass: geoClassesOptional) {
-//                geoClass.setId();
-//            }
-//            geoClassesOptional.addAll(geoClasses);
-//        }
-//        section.setGeoClasses(geoClassesOptional);
+        List<GeoClass> geoClassesOptional = sectionOptional.get().getGeoClasses();
+        List<GeoClass> geoClasses = section.getGeoClasses();
+
+        if (geoClasses != null) {
+            geoClassesOptional.addAll(geoClasses);
+        }
+        section.setGeoClasses(geoClassesOptional);
         sectionRepository.save(section);
         response.put("message", "successfully update");
         return ResponseEntity.ok(response);
@@ -126,7 +118,7 @@ public class SectionController {
     @PostMapping("/import/")
     public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws InterruptedException {
         Import task = new Import();
-        xlsxFileUpload.uploadXlsFile(file, task);
+        xlsFileUpload.uploadXlsFile(file, task);
         importTasks.put(task.getTaskId(), task);
         return task.getTaskId();
     }
@@ -147,7 +139,7 @@ public class SectionController {
     public ResponseEntity<Map<String, String>> exportFile() throws IOException, InterruptedException {
         Map<String, String> result = new HashMap<>();
         Export exportTask = new Export();
-        Future<byte[]> future = xlsxFileExport.exportDBDataToXlsxFile();
+        Future<byte[]> future = xlsFileExport.exportDBDataToXlsxFile();
         int taskId = exportTask.getTaskId();
         exportTasks.put(taskId, future);
         result.put("taskId", String.valueOf(taskId));
@@ -187,16 +179,20 @@ public class SectionController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
         }
 
+        if (!future.isDone()) {
+            result.put("status", Export.PROCESSING);
+            return ResponseEntity.ok(result);
+        }
+
         byte[] out = new byte[0];
 
-        if (future.isDone()) {
-            try {
-                out = future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                result.put("status", Export.PROCESSING);
-                return ResponseEntity.ok(result);
-            }
+        try {
+            out = future.get();
+        } catch (InterruptedException | ExecutionException exception) {
+            result.put("status", Export.FAILURE);
+            return ResponseEntity.ok(result);
         }
+
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + SectionController.FILENAME + taskId + SectionController.EXTENSION)

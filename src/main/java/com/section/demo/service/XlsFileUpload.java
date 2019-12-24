@@ -13,23 +13,20 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class XlsxFileUpload {
+public class XlsFileUpload {
 
     private SectionRepository sectionRepository;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(XlsxFileUpload.class);
-
-    public XlsxFileUpload(SectionRepository sectionRepository) {
+    public XlsFileUpload(SectionRepository sectionRepository) {
         this.sectionRepository = sectionRepository;
     }
 
     @Async
-    public void uploadXlsFile(MultipartFile file, Import task) throws InterruptedException {
+    public void uploadXlsFile(MultipartFile file, Import task) {
         try {
             XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
             XSSFSheet worksheet = workbook.getSheetAt(0);
@@ -60,11 +57,9 @@ public class XlsxFileUpload {
                 sections.add(sectionRepository.save(section));
             }
         } catch (Exception exception) {
-            System.out.println("EXCEPTION");
             task.setStatus(Import.FAILURE);
             return;
         }
-        Thread.sleep(5000L);
         task.setStatus(Import.DONE);
     }
 }

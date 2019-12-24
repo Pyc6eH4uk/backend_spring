@@ -1,7 +1,5 @@
 package com.section.demo.job;
 
-import org.springframework.scheduling.annotation.AsyncResult;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,14 +28,6 @@ public class Export {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public void setFile(Future<byte[]> file) {
-        this.file = file;
-    }
-
-    public byte[] getResultOfTask() throws ExecutionException, InterruptedException {
-        return this.file.get();
     }
 
 }

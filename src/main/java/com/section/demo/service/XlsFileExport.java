@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 @Service
-public class XlsxFileExport {
+public class XlsFileExport {
 
     @Autowired
     private SectionRepository sectionRepository;
@@ -34,7 +34,7 @@ public class XlsxFileExport {
     @Autowired
     private GeoClassRepository geoClassRepository;
 
-    public XlsxFileExport() {}
+    public XlsFileExport() {}
 
     private static final String SECTION_COLUMN = "Section names";
     private static final String CLASS_COLUMN = "Class";
@@ -42,7 +42,7 @@ public class XlsxFileExport {
     private static final String NAME = "name";
 
     @Async
-    public Future<byte[]> exportDBDataToXlsxFile() throws IOException, InterruptedException {
+    public Future<byte[]> exportDBDataToXlsxFile() throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Result");
 
@@ -91,9 +91,6 @@ public class XlsxFileExport {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         workbook.write(out);
         workbook.close();
-        System.out.println("SLEEP");
-        Thread.sleep(5000L);
-        System.out.println("AFTER SLEEP");
         return new AsyncResult<>(out.toByteArray());
     }
 }
