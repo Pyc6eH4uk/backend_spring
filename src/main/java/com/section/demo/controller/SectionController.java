@@ -6,15 +6,9 @@ import com.section.demo.job.Export;
 import com.section.demo.job.Import;
 import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
-import com.section.demo.service.SectionService;
 import com.section.demo.service.XlsxFileExport;
 import com.section.demo.service.XlsxFileUpload;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
+import org.apache.poi.util.ArrayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,10 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -35,16 +26,13 @@ import java.util.concurrent.Future;
 public class SectionController {
 
     public static final String FILENAME = "result";
-    public static final String EXTENSION = ".xls";
+    public static final String EXTENSION = ".xlsx";
 
     @Autowired
     private SectionRepository sectionRepository;
 
     @Autowired
     private GeoClassRepository geoClassRepository;
-
-    @Autowired
-    private SectionService sectionService;
 
     @Autowired
     private XlsxFileUpload xlsxFileUpload;
@@ -70,9 +58,9 @@ public class SectionController {
     public ResponseEntity<Map<String, String>> createSection(@Valid @RequestBody Section section) {
         Map<String, String> response = new HashMap<>();
         try {
-            section = sectionService.save(section);
+            section = sectionRepository.save(section);
         } catch (Exception exception) {
-            response.put("message", "Section with such name already exists.");
+            response.put("message", "section with such name already exists.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         @Valid Section finalSection = section;
@@ -84,17 +72,40 @@ public class SectionController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/sections/{sectionId}")
+    public ResponseEntity<Map<String, String>> updateSection(@Valid @RequestBody Section section, @PathVariable(value = "sectionId") Long sectionId) {
+        Optional<Section> sectionOptional = sectionRepository.findById(sectionId);
+        Map<String, String> response = new HashMap<>();
+        if (!sectionOptional.isPresent()) {
+            response.put("message", "not existing section");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        section.setId(sectionId);
+//        List<GeoClass> geoClassesOptional = sectionOptional.get().getGeoClasses();
+//        List<GeoClass> geoClasses = section.getGeoClasses();
+//        if (geoClasses != null) {
+//            for (GeoClass geoClass: geoClassesOptional) {
+//                geoClass.setId();
+//            }
+//            geoClassesOptional.addAll(geoClasses);
+//        }
+//        section.setGeoClasses(geoClassesOptional);
+        sectionRepository.save(section);
+        response.put("message", "successfully update");
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/sections/{sectionId}")
-    public Map<String, Boolean> deleteSection(@PathVariable(value = "sectionId") Long sectionId) {
-        Map<String, Boolean> response = new HashMap<>();
+    public ResponseEntity deleteSection(@PathVariable(value = "sectionId") long sectionId) {
+        Map<String, String> response = new HashMap<>();
         if (sectionRepository.existsById(sectionId)) {
             Section section = sectionRepository.getOne(sectionId);
             sectionRepository.delete(section);
-            response.put("deleted", Boolean.TRUE);
-            return response;
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
         }
-        response.put("deleted", Boolean.FALSE);
-        return response;
+        response.put("message", "not found section");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @GetMapping("/sections/by-code")
@@ -113,7 +124,7 @@ public class SectionController {
     }
 
     @PostMapping("/import/")
-    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws IOException, InterruptedException {
+    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws InterruptedException {
         Import task = new Import();
         xlsxFileUpload.uploadXlsFile(file, task);
         importTasks.put(task.getTaskId(), task);
@@ -136,9 +147,7 @@ public class SectionController {
     public ResponseEntity<Map<String, String>> exportFile() throws IOException, InterruptedException {
         Map<String, String> result = new HashMap<>();
         Export exportTask = new Export();
-        int columnsCount = geoClassRepository.countAllRows();
-        List<Section> sections = sectionRepository.findAll();
-        Future<byte[]> future = xlsxFileExport.exportDBDataToXlsxFile(sections, columnsCount);
+        Future<byte[]> future = xlsxFileExport.exportDBDataToXlsxFile();
         int taskId = exportTask.getTaskId();
         exportTasks.put(taskId, future);
         result.put("taskId", String.valueOf(taskId));

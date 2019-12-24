@@ -29,7 +29,7 @@ public class XlsxFileUpload {
     }
 
     @Async
-    public void uploadXlsFile(MultipartFile file, Import task) throws IOException, InterruptedException {
+    public void uploadXlsFile(MultipartFile file, Import task) throws InterruptedException {
         try {
             XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
             XSSFSheet worksheet = workbook.getSheetAt(0);
@@ -50,7 +50,7 @@ public class XlsxFileUpload {
                     }
                     geoClass.setName(name);
 
-                    String code = row.getCell(j + 1).toString();
+                    String code = row.getCell(++j).toString();
                     if (code != null) {
                         geoClass.setCode(code);
                     }

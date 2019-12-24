@@ -3,6 +3,7 @@ package com.section.demo.service;
 import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
 import com.section.demo.job.Export;
+import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -17,6 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
+import javax.print.attribute.standard.MediaSize;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,14 +31,18 @@ public class XlsxFileExport {
     @Autowired
     private SectionRepository sectionRepository;
 
+    @Autowired
+    private GeoClassRepository geoClassRepository;
+
     public XlsxFileExport() {}
 
     private static final String SECTION_COLUMN = "Section names";
-    private static final String CLASS_COLUMN = "Class name";
-    private static final String CODE_COLUMN = "Code name";
+    private static final String CLASS_COLUMN = "Class";
+    private static final String CODE_COLUMN = "Code";
+    private static final String NAME = "name";
 
     @Async
-    public Future<byte[]> exportDBDataToXlsxFile(List<Section> sections, int columnsCount) throws IOException, InterruptedException {
+    public Future<byte[]> exportDBDataToXlsxFile() throws IOException, InterruptedException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Result");
 
@@ -44,13 +50,21 @@ public class XlsxFileExport {
         Cell section_cell = headerRow.createCell(0);
         section_cell.setCellValue(SECTION_COLUMN);
 
-        List<Section> newSections = sectionRepository.findAll();
+        List<Section> sections = sectionRepository.findAll();
+        int columnsCount = 0;
+        for (Section section : sections) {
+            int geoClassLength = section.geoClasses.size();
+            if (columnsCount < geoClassLength) {
+                columnsCount = geoClassLength;
+            }
+        }
 
-        for (int i = 1; i < columnsCount - 1; i += 2) {
+        for (int i = 1; i <= columnsCount; i += 1) {
             Cell class_cell = headerRow.createCell(i);
-            class_cell.setCellValue(CLASS_COLUMN + i);
-            Cell code_cell = headerRow.createCell((i + 1));
-            code_cell.setCellValue(CODE_COLUMN + " " + (i + 1));
+            class_cell.setCellValue(CLASS_COLUMN + " " + i + " " + NAME);
+            Cell code_cell = headerRow.createCell(i + 1);
+            code_cell.setCellValue(CODE_COLUMN + " " + i + " " + NAME);
+            i++;
         }
 
         int rowNumber = 1;
@@ -70,8 +84,8 @@ public class XlsxFileExport {
                 row.createCell(cell).setCellValue(geoClass.getName());
                 cell++;
 
-                row.createCell(cell).setCellValue(geoClass.getName());
-                cell++;
+                row.createCell(cell).setCellValue(geoClass.getCode());
+//                cell++;
             }
         }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
