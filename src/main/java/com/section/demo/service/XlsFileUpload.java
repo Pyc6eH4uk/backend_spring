@@ -7,8 +7,6 @@ import com.section.demo.repository.SectionRepository;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +35,7 @@ public class XlsFileUpload {
                 Section section = new Section();
                 section.setName(row.getCell(0).toString());
 
-                List<GeoClass> geoClasses = new ArrayList<>();
+                List<GeoClass> geologicalClasses = new ArrayList<>();
 
                 for (int j = 1; j < row.getLastCellNum() - 1; j++) {
                     GeoClass geoClass = new GeoClass();
@@ -51,9 +49,9 @@ public class XlsFileUpload {
                     if (code != null) {
                         geoClass.setCode(code);
                     }
-                    geoClasses.add(geoClass);
+                    geologicalClasses.add(geoClass);
                 }
-                section.setGeoClasses(geoClasses);
+                section.setgeologicalClasses(geologicalClasses);
                 sections.add(sectionRepository.save(section));
             }
         } catch (Exception exception) {

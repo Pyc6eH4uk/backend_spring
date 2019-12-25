@@ -2,8 +2,6 @@ package com.section.demo.service;
 
 import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
-import com.section.demo.job.Export;
-import com.section.demo.repository.GeoClassRepository;
 import com.section.demo.repository.SectionRepository;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -12,15 +10,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
-import javax.print.attribute.standard.MediaSize;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -31,9 +25,6 @@ public class XlsFileExport {
     @Autowired
     private SectionRepository sectionRepository;
 
-    @Autowired
-    private GeoClassRepository geoClassRepository;
-
     public XlsFileExport() {}
 
     private static final String SECTION_COLUMN = "Section names";
@@ -42,7 +33,7 @@ public class XlsFileExport {
     private static final String NAME = "name";
 
     @Async
-    public Future<byte[]> exportDBDataToXlsxFile() throws IOException {
+    public Future<byte[]> exportDBDataToXlsxFile() throws IOException, InterruptedException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Result");
 
@@ -50,21 +41,26 @@ public class XlsFileExport {
         Cell section_cell = headerRow.createCell(0);
         section_cell.setCellValue(SECTION_COLUMN);
 
-        List<Section> sections = sectionRepository.findAll();
+        List<Section> sections = sectionRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
         int columnsCount = 0;
         for (Section section : sections) {
-            int geoClassLength = section.geoClasses.size();
+            int geoClassLength = section.geologicalClasses.size();
             if (columnsCount < geoClassLength) {
                 columnsCount = geoClassLength;
             }
         }
 
+        columnsCount *= 2;
+
+        int j = 1;
         for (int i = 1; i <= columnsCount; i += 1) {
             Cell class_cell = headerRow.createCell(i);
-            class_cell.setCellValue(CLASS_COLUMN + " " + i + " " + NAME);
-            Cell code_cell = headerRow.createCell(i + 1);
-            code_cell.setCellValue(CODE_COLUMN + " " + i + " " + NAME);
-            i++;
+            if (i % 2 == 0) {
+                class_cell.setCellValue(CODE_COLUMN + " " + j + " " + NAME);
+                j++;
+            } else {
+                class_cell.setCellValue(CLASS_COLUMN + " " + j + " " + NAME);
+            }
         }
 
         int rowNumber = 1;
@@ -75,17 +71,17 @@ public class XlsFileExport {
 
             row.createCell(cell).setCellValue(section.getName());
 
-            List<GeoClass> geoClasses = section.getGeoClasses();
-            if (geoClasses == null) {
+            List<GeoClass> geologicalClasses = section.getgeologicalClasses();
+            if (geologicalClasses == null) {
                 continue;
             }
             cell++;
-            for (GeoClass geoClass : geoClasses) {
+            for (GeoClass geoClass : geologicalClasses) {
                 row.createCell(cell).setCellValue(geoClass.getName());
                 cell++;
 
                 row.createCell(cell).setCellValue(geoClass.getCode());
-//                cell++;
+                cell++;
             }
         }
         ByteArrayOutputStream out = new ByteArrayOutputStream();

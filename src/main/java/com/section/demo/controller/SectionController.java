@@ -9,6 +9,8 @@ import com.section.demo.repository.SectionRepository;
 import com.section.demo.service.XlsFileExport;
 import com.section.demo.service.XlsFileUpload;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,16 +52,16 @@ public class SectionController {
 
     @GetMapping("/sections/")
     public List<Section> getAllSections() {
-        return sectionRepository.findAll();
+        return sectionRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
     }
 
     @PostMapping("/sections/")
     public ResponseEntity<Map<String, String>> createSection(@Valid @RequestBody Section section) {
         Map<String, String> response = new HashMap<>();
         try {
-            section = sectionRepository.save(section);
-        } catch (Exception exception) {
-            response.put("message", "section with such name already exists.");
+            sectionRepository.save(section);
+        } catch (DataIntegrityViolationException exception) {
+            response.put("message", "section with such name already exists or values for geologicalClasses are empty");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         response.put("message", "Successfully created section.");
@@ -72,18 +74,23 @@ public class SectionController {
         Map<String, String> response = new HashMap<>();
         if (!sectionOptional.isPresent()) {
             response.put("message", "not existing section");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
         section.setId(sectionId);
-        List<GeoClass> geoClassesOptional = sectionOptional.get().getGeoClasses();
-        List<GeoClass> geoClasses = section.getGeoClasses();
+        List<GeoClass> geologicalClassesOptional = sectionOptional.get().getgeologicalClasses();
+        List<GeoClass> geologicalClasses = section.getgeologicalClasses();
 
-        if (geoClasses != null) {
-            geoClassesOptional.addAll(geoClasses);
+        if (geologicalClasses != null) {
+            geologicalClassesOptional.addAll(geologicalClasses);
         }
-        section.setGeoClasses(geoClassesOptional);
-        sectionRepository.save(section);
+        section.setgeologicalClasses(geologicalClassesOptional);
+        try {
+            sectionRepository.save(section);
+        } catch (DataIntegrityViolationException exception) {
+            response.put("message", "provided code already exists for this section or values for geologicalClasses are empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         response.put("message", "successfully update");
         return ResponseEntity.ok(response);
     }
@@ -102,12 +109,12 @@ public class SectionController {
 
     @GetMapping("/sections/by-code")
     public List<Map<String, Object>> getAllListsByGeoClassCode(@RequestParam String code) {
-        List<GeoClass> geoClasses = geoClassRepository.findAllByCode(code);
+        List<GeoClass> geologicalClasses = geoClassRepository.findAllByCode(code);
 
         List<Map<String, Object>> sections = new ArrayList<>();
-        for (GeoClass geoClass : geoClasses) {
+        for (GeoClass geoClass : geologicalClasses) {
             Map<String, Object> response = new HashMap<>();
-            Section section = sectionRepository.findByGeoClasses(geoClass);
+            Section section = sectionRepository.findByGeologicalClasses(geoClass);
             response.put("id", section.getId());
             response.put("name", section.getName());
             sections.add(response);
@@ -116,11 +123,18 @@ public class SectionController {
     }
 
     @PostMapping("/import/")
-    public Integer uploadXlsFile(@RequestParam("file") MultipartFile file) throws InterruptedException {
+    public ResponseEntity<Map<String, String>> uploadXlsFile(@RequestParam("file") MultipartFile file) {
+        Map<String, String> result = new HashMap<>();
+        if (file == null) {
+            result.put("message", "provide file");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+        }
         Import task = new Import();
         xlsFileUpload.uploadXlsFile(file, task);
-        importTasks.put(task.getTaskId(), task);
-        return task.getTaskId();
+        int taskId = task.getTaskId();
+        importTasks.put(taskId, task);
+        result.put("taskId", String.valueOf(taskId));
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/import/{taskId}")

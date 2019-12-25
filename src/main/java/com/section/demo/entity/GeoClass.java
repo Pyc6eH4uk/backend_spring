@@ -11,10 +11,10 @@ public class GeoClass {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String code;
 
     @ManyToOne

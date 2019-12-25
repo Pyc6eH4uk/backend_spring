@@ -17,7 +17,7 @@ public class Section {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "section_id")
-    public List<GeoClass> geoClasses;
+    public List<GeoClass> geologicalClasses;
 
     public Section(){
 
@@ -43,12 +43,12 @@ public class Section {
         this.name = name;
     }
 
-    public List<GeoClass> getGeoClasses() {
-        return geoClasses;
+    public List<GeoClass> getgeologicalClasses() {
+        return geologicalClasses;
     }
 
-    public void setGeoClasses(List<GeoClass> geoClasses) {
-        this.geoClasses = geoClasses;
+    public void setgeologicalClasses(List<GeoClass> geologicalClasses) {
+        this.geologicalClasses = geologicalClasses;
     }
 
     @Override

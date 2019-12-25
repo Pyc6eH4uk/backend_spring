@@ -1,7 +1,5 @@
 package com.section.demo.job;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Export {
@@ -12,7 +10,6 @@ public class Export {
     public static AtomicInteger id = new AtomicInteger(1);
     private String status = Export.PROCESSING;
     private int taskId;
-    private Future<byte[]> file;
 
     public Export() {
         this.taskId = id.getAndAdd(1);
