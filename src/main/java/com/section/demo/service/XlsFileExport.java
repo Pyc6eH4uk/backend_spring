@@ -71,7 +71,7 @@ public class XlsFileExport {
 
             row.createCell(cell).setCellValue(section.getName());
 
-            List<GeoClass> geologicalClasses = section.getgeologicalClasses();
+            List<GeoClass> geologicalClasses = section.getGeologicalClasses();
             if (geologicalClasses == null) {
                 continue;
             }

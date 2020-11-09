@@ -17,7 +17,7 @@ import java.util.List;
 @Service
 public class XlsFileUpload {
 
-    private SectionRepository sectionRepository;
+    private final SectionRepository sectionRepository;
 
     public XlsFileUpload(SectionRepository sectionRepository) {
         this.sectionRepository = sectionRepository;
@@ -51,7 +51,7 @@ public class XlsFileUpload {
                     }
                     geologicalClasses.add(geoClass);
                 }
-                section.setgeologicalClasses(geologicalClasses);
+                section.setGeologicalClasses(geologicalClasses);
                 sections.add(sectionRepository.save(section));
             }
         } catch (Exception exception) {
