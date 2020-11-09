@@ -1,62 +1,32 @@
 package com.section.demo.entity;
 
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
+@ToString
 @Entity
 @Table(name = "section")
 public class Section {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "section_id")
-    private long id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
-    public List<GeoClass> geologicalClasses;
+    public List<GeoClass> geologicalClasses = new ArrayList<>();
 
-    public Section(){
-
-    }
-
-    public Section(String name) {
-        this.name = name;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<GeoClass> getgeologicalClasses() {
-        return geologicalClasses;
-    }
-
-    public void setgeologicalClasses(List<GeoClass> geologicalClasses) {
-        this.geologicalClasses = geologicalClasses;
-    }
-
-    @Override
-    public String toString() {
-        return String.format(
-                "Section[id=%d, name='%s']%n",
-                id, name);
-    }
 }
 
 

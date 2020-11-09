@@ -1,16 +1,11 @@
 package com.section.demo.controller;
 
-import com.section.demo.entity.GeoClass;
 import com.section.demo.entity.Section;
 import com.section.demo.job.Export;
 import com.section.demo.job.Import;
-import com.section.demo.repository.GeoClassRepository;
-import com.section.demo.repository.SectionRepository;
+import com.section.demo.service.SectionService;
 import com.section.demo.service.XlsFileExport;
 import com.section.demo.service.XlsFileUpload;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,97 +24,48 @@ public class SectionController {
     public static final String FILENAME = "result";
     public static final String EXTENSION = ".xlsx";
 
-    @Autowired
-    private SectionRepository sectionRepository;
+    private final SectionService sectionService;
+    private final XlsFileUpload xlsFileUpload;
+    private final XlsFileExport xlsFileExport;
 
-    @Autowired
-    private GeoClassRepository geoClassRepository;
-
-    @Autowired
-    private XlsFileUpload xlsFileUpload;
-
-    @Autowired
-    private XlsFileExport xlsFileExport;
 
     private Map<Integer, Import> importTasks;
     private Map<Integer, Future<byte[]>> exportTasks;
 
 
-    public SectionController() {
+    public SectionController(SectionService sectionService, XlsFileUpload xlsFileUpload, XlsFileExport xlsFileExport) {
+        this.sectionService = sectionService;
+        this.xlsFileUpload = xlsFileUpload;
+        this.xlsFileExport = xlsFileExport;
         this.importTasks = new HashMap<>();
         this.exportTasks = new HashMap<>();
     }
 
     @GetMapping("/sections/")
     public List<Section> getAllSections() {
-        return sectionRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
+        return sectionService.findAll();
     }
 
     @PostMapping("/sections/")
-    public ResponseEntity<Map<String, String>> createSection(@Valid @RequestBody Section section) {
-        Map<String, String> response = new HashMap<>();
-        try {
-            sectionRepository.save(section);
-        } catch (DataIntegrityViolationException exception) {
-            response.put("message", "section with such name already exists or values for geologicalClasses are empty");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-        response.put("message", "Successfully created section.");
-        return ResponseEntity.ok(response);
+    public Section createSection(@Valid @RequestBody final Section section) {
+        return sectionService.create(section);
     }
 
     @PutMapping("/sections/{sectionId}")
-    public ResponseEntity<Map<String, String>> updateSection(@Valid @RequestBody Section section, @PathVariable(value = "sectionId") Long sectionId) {
-        Optional<Section> sectionOptional = sectionRepository.findById(sectionId);
-        Map<String, String> response = new HashMap<>();
-        if (!sectionOptional.isPresent()) {
-            response.put("message", "not existing section");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }
-
+    public Section updateSection(@Valid @RequestBody final Section section,
+                                 @PathVariable(value = "sectionId") final Long sectionId) {
         section.setId(sectionId);
-        List<GeoClass> geologicalClassesOptional = sectionOptional.get().getgeologicalClasses();
-        List<GeoClass> geologicalClasses = section.getgeologicalClasses();
-
-        if (geologicalClasses != null) {
-            geologicalClassesOptional.addAll(geologicalClasses);
-        }
-        section.setgeologicalClasses(geologicalClassesOptional);
-        try {
-            sectionRepository.save(section);
-        } catch (DataIntegrityViolationException exception) {
-            response.put("message", "provided code already exists for this section or values for geologicalClasses are empty");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-        response.put("message", "successfully update");
-        return ResponseEntity.ok(response);
+        return sectionService.update(section);
     }
 
     @DeleteMapping("/sections/{sectionId}")
-    public ResponseEntity deleteSection(@PathVariable(value = "sectionId") long sectionId) {
-        Map<String, String> response = new HashMap<>();
-        if (sectionRepository.existsById(sectionId)) {
-            Section section = sectionRepository.getOne(sectionId);
-            sectionRepository.delete(section);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
-        }
-        response.put("message", "not found section");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    public void deleteSection(@PathVariable(value = "sectionId") final Long sectionId) {
+        sectionService.delete(sectionId);
     }
 
     @GetMapping("/sections/by-code")
-    public List<Map<String, Object>> getAllListsByGeoClassCode(@RequestParam String code) {
-        List<GeoClass> geologicalClasses = geoClassRepository.findAllByCode(code);
-
-        List<Map<String, Object>> sections = new ArrayList<>();
-        for (GeoClass geoClass : geologicalClasses) {
-            Map<String, Object> response = new HashMap<>();
-            Section section = sectionRepository.findByGeologicalClasses(geoClass);
-            response.put("id", section.getId());
-            response.put("name", section.getName());
-            sections.add(response);
-        }
-        return sections;
+    public List<Section> findAllListsByGeoClassCode(@RequestParam String code) {
+        return sectionService.findAllByGeoClassCode(code);
     }
 
     @PostMapping("/import/")

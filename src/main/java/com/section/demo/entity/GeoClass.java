@@ -1,15 +1,21 @@
 package com.section.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 
+@Getter
+@Setter
+@ToString
 @Entity
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"code", "section_id"})})
 public class GeoClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(nullable = false)
     private String name;
@@ -17,43 +23,8 @@ public class GeoClass {
     @Column(nullable = false)
     private String code;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     public Section sections;
 
-    public GeoClass() {
-
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public Section getSections() {
-        return sections;
-    }
-
-    public void setSections(Section sections) {
-        this.sections = sections;
-    }
 }
